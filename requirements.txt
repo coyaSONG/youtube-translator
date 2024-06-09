@@ -1,0 +1,4 @@
+openai
+yt-dlp
+pysrt
+
