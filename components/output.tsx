@@ -19,7 +19,7 @@ export const Output: React.FC<Props> = ({ children }) => {
   return (
     <Box
       ref={refBox}
-      css={{ flex: 1, overflow: 'auto' }}
+      css={{ flex: 1, overflow: 'auto'}}
       className="output-container"
     >
       <Pre>{children}</Pre>

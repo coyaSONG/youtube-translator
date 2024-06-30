@@ -2,23 +2,23 @@ export function extractVideoIdfromUrl(url: string) {
   return new URL(url).searchParams.get('v')
 }
 
-type ProgressCallback = (output: string) => void
+type ProgressCallback = (output: string, progress: number) => void
 
 export async function processVideo(
   videoId: string,
   callback: ProgressCallback
 ): Promise<string | false> {
-  callback('Downloading audio...\n')
+  callback('Downloading audio...\n',0)
   await downloadAudio(videoId, callback)
 
-  callback('Transcring audio... wait...\n')
+  callback('Transcring audio... wait...\n', 20)
 
   const srt = await transcribe(videoId, callback)
 
   if (srt) {
-    callback('\nTranslating text... wait...\n')
+    callback('\nTranslating text... wait...\n',50)
     const result = await translate(srt, callback)
-    callback('\nDone!\n')
+    callback('\nDone!\n',100)
     return result
   }
 
@@ -30,7 +30,7 @@ export async function downloadAudio(videoId: string, onProgress: ProgressCallbac
   const reader = res.body?.getReader()
 
   if (reader) {
-    return streamResponse(reader, onProgress)
+    return streamResponse(reader, onProgress, 10,20)
   } else {
     return false
   }
@@ -44,7 +44,7 @@ export async function transcribe(
   const reader = res.body?.getReader()
 
   if (reader) {
-    return streamResponse(reader, onProgress)
+    return streamResponse(reader,onProgress,30,50)
   } else {
     return false
   }
@@ -64,7 +64,7 @@ export async function translate(
   const reader = res.body?.getReader()
 
   if (reader) {
-    const res = await streamResponse(reader, onProgress)
+    const res = await streamResponse(reader, onProgress, 60,90)
 
     return res
       .split('\n')
@@ -79,21 +79,29 @@ export async function translate(
 
 async function streamResponse(
   reader: ReadableStreamDefaultReader<Uint8Array>,
-  onProgress: ProgressCallback
+  onProgress: ProgressCallback,
+  startProgress: number,
+  endProgress: number
 ): Promise<string> {
   return new Promise((resolve) => {
     const decoder = new TextDecoder()
     let result = ''
+    let processedChunks = 0
+    const totalChunks = 100
+
     const readChunk = ({ done, value }: ReadableStreamReadResult<Uint8Array>) => {
       if (done) {
         decoder.decode()
+        onProgress('', endProgress)
         resolve(result)
         return
       }
 
       const output = decoder.decode(value, { stream: true })
       result += output
-      onProgress(output)
+      processedChunks++
+      const currentProgress = startProgress + (endProgress - startProgress) * (processedChunks/totalChunks)
+      onProgress(output, Math.min(currentProgress, endProgress))
       reader.read().then(readChunk)
     }
     reader.read().then(readChunk)

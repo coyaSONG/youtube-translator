@@ -7,6 +7,7 @@ import { TabsList, TabsRoot, TabsTrigger } from '../components/tabs'
 import VideoForm from '../components/video-form'
 import { styled } from '../stitches.config'
 import { extractVideoIdfromUrl, processVideo } from '../utils/api-client'
+import ProgressBar from '../components/progressbar'
 
 const Text = styled('p', {
   fontFamily: '$system',
@@ -42,22 +43,32 @@ const Container = styled('div', {
     }
   }
 })
+ 
+const TabContainer = styled('div', {
+  display: 'flex',
+  flexDirection: 'column',
+  flexGrow: 1,
+  minHeight: 0,
+})
 
 export default function Home() {
   const [isProcessing, setProcessing] = useState(false)
   const [progressOutput, setProgressOutput] = useState('')
   const [activeTab, setActiveTab] = useState('progress')
   const [resultTranscript, setResultTransciprt] = useState('')
+  const [progress, setProgress] = useState(0)
 
   const handleStartProcessing = async (videoUrl: string) => {
+    setResultTransciprt('');
+    setProcessing(true)
+    setProgress(0)
+  
     //todo
     const videoId = extractVideoIdfromUrl(videoUrl)
     if (typeof videoId === 'string') {
-      setResultTransciprt('')
-      setProcessing(true)
-
-      const transcriptInKorean = await processVideo(videoId, (message) => {
+      const transcriptInKorean = await processVideo(videoId, (message, currentProgress) => {
         setProgressOutput((prev) => prev + message)
+        setProgress(currentProgress)
       })
 
       if (transcriptInKorean) {
@@ -79,6 +90,9 @@ export default function Home() {
       <Container size={{ '@initial': '1', '@bp1': '2' }}>
         <Text as="h1">Youtube Transcription &amp; Translation</Text>
         <VideoForm onSubmit={handleStartProcessing} isProcessing={isProcessing} />
+        <Box css={{height: '24px'}}>
+        {isProcessing && <ProgressBar progress={progress}/>}
+        </Box>
         <TabsRoot value={activeTab} onValueChange={setActiveTab}>
           <TabsList aria-label="Output">
             <TabsTrigger value="progress">Progress</TabsTrigger>
