@@ -20,7 +20,7 @@ const VideoForm: React.FC<Props> = ({ onSubmit, isProcessing, disabled }) => {
   }
 
   return (
-    <Box as="form" onSubmit={handleSubmit} css={{ marginBottom: '$4' }}>
+    <FormRoot onSubmit={handleSubmit}>
       <FormField name="vieoUrl">
         <Flex css={{ alignItems: 'baseline', justifyContent: 'space-between' }}>
           <Form.Label>URL</Form.Label>
@@ -42,12 +42,13 @@ const VideoForm: React.FC<Props> = ({ onSubmit, isProcessing, disabled }) => {
           {isProcessing ? 'Processing...' : 'Start Processing'}
         </Button>
       </Form.Submit>
-    </Box>
+    </FormRoot>
   )
 }
 
 const FormRoot = styled(Form.Root, {
   width: '100%',
+  marginBottom: '16px'
 })
 
 const FormField = styled(Form.Field, {
@@ -96,22 +97,39 @@ const Button = styled('button', {
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  borderRadius: 4,
+  borderRadius: '4px',
 
-  fontSize: 15,
+  fontSize: '15px',
   lineHeight: 1,
   fontWeight: 500,
   height: '40px',
   width: '100%',
 
-  backgroundColor: '$purple600',
+  backgroundColor: '#7c3aed',
   color: 'white',
-  boxShadow: `0 2px 10px $gray400`,
-  '&:hover': { backgroundColor: '$purple700' },
-  '&:not(disabled):focus': { boxShadow: `0 0 0 2px black` },
+  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+  transition: 'all 0.2s ease',
+  
+  '&:hover': { 
+    backgroundColor: '#6025c9',
+    transform: 'translateY(-1px)',
+    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)'
+  },
+  
+  '&:active': {
+    transform: 'translateY(1px)',
+    boxShadow: '0 2px 3px rgba(0, 0, 0, 0.1)'
+  },
+  
+  '&:focus': { 
+    boxShadow: '0 0 0 2px #e2d9f7'
+  },
 
   '&:disabled': {
-    backgroundColor: '$gray400',
+    backgroundColor: '#d1d5db',
+    color: '#6b7280',
+    transform: 'none',
+    boxShadow: 'none',
     cursor: 'not-allowed'
   }
 })
