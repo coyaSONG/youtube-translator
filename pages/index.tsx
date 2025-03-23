@@ -62,6 +62,7 @@ export default function Home() {
 
   const handleStartProcessing = async (videoUrl: string) => {
     setResultTransciprt('');
+    setProgressOutput('');
     setProcessing(true)
     setProgress(0)
   
