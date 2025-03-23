@@ -1,95 +1,93 @@
-import React from 'react'
+import React, { useState } from 'react'
 import * as Form from '@radix-ui/react-form'
 import { styled } from '@stitches/react'
+import Box from './box'
 
 type Props = {
-  onSubmit: (videoUrl: string) => void
+  onSubmit: (videoUrl: string) => Promise<void>
   isProcessing: boolean
+  disabled?: boolean
 }
 
-const VideoForm: React.FC<Props> = ({ onSubmit, isProcessing }) => {
-  const handleSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
-    e.preventDefault()
+const VideoForm: React.FC<Props> = ({ onSubmit, isProcessing, disabled }) => {
+  const [url, setUrl] = useState('')
 
-    const videoUrl = (e.target as HTMLFormElement | undefined)?.videoUrl
-      ?.value as string
-    onSubmit(videoUrl)
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (url) {
+      await onSubmit(url)
+    }
   }
+
   return (
-    <FormRoot onSubmit={handleSubmit}>
+    <Box as="form" onSubmit={handleSubmit} css={{ marginBottom: '$4' }}>
       <FormField name="vieoUrl">
         <Flex css={{ alignItems: 'baseline', justifyContent: 'space-between' }}>
-          <FormLabel>Video URL</FormLabel>
-          <FormMessage match="valueMissing">
-            Please enter youtube URL
-          </FormMessage>
-          <FormMessage match="typeMismatch">
-            Please provide a valid URL
-          </FormMessage>
+          <Form.Label>URL</Form.Label>
         </Flex>
         <Form.Control asChild>
           <Input
-            type="text"
             name="videoUrl"
+            type="url"
             required
             placeholder="https://www.youtube.com/watch?v="
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            disabled={isProcessing || disabled}
           />
         </Form.Control>
       </FormField>
       <Form.Submit asChild>
-        <Button css={{ marginTop: 10 }} disabled={isProcessing}>
+        <Button type="submit" disabled={isProcessing || !url || disabled}>
           {isProcessing ? 'Processing...' : 'Start Processing'}
         </Button>
       </Form.Submit>
-    </FormRoot>
+    </Box>
   )
 }
 
-const FormRoot = styled(Form.Root, {})
+const FormRoot = styled(Form.Root, {
+  width: '100%',
+})
 
 const FormField = styled(Form.Field, {
   display: 'grid',
   marginBottom: 10
 })
 
-const FormLabel = styled(Form.Label, {
-  fontSize: 15,
-  fontWeight: 500,
-  lineHeight: '35px',
-  color: '$foreground'
+const Flex = styled('div', {
+  display: 'flex'
 })
-
-const FormMessage = styled(Form.Message, {
-  fontSize: 13,
-  color: '$red600',
-  opacity: 0.8
-})
-
-const Flex = styled('div', { display: 'flex' })
 
 const inputStyles = {
   all: 'unset',
   boxSizing: 'border-box',
-  width: '100%',
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
   borderRadius: 4,
 
   fontSize: 15,
-  color: '$foreground',
-  backgroundColor: '$gray300',
+  color: '$purple600',
+  backgroundColor: 'white',
   boxShadow: `0 0 0 1px $gray400`,
   '&:hover': { boxShadow: `0 0 0 1px $gray600` },
   '&:focus': { boxShadow: `0 0 0 2px $purple600` },
-  '&::selection': { backgroundColor: '$gray600', color: 'white' }
+  '&::selection': { backgroundColor: '$gray600', color: 'white' },
+
+  width: '100%',
+  height: '40px',
+  padding: '0 $2',
+  
+  '&:disabled': {
+    backgroundColor: '$gray200',
+    cursor: 'not-allowed'
+  }
 }
 
 const Input = styled('input', {
   ...inputStyles,
-  height: 35,
   lineHeight: 1,
-  padding: '0 10px'
 })
 
 const Button = styled('button', {
@@ -99,18 +97,23 @@ const Button = styled('button', {
   alignItems: 'center',
   justifyContent: 'center',
   borderRadius: 4,
-  padding: '0 15px',
+
   fontSize: 15,
   lineHeight: 1,
   fontWeight: 500,
-  height: 35,
+  height: '40px',
   width: '100%',
 
-  backgroundColor: '$purple500',
+  backgroundColor: '$purple600',
   color: 'white',
   boxShadow: `0 2px 10px $gray400`,
-  '&:not(disabled):hover': { backgroundColor: '$purple600' },
-  '&:not(disabled):focus': { boxShadow: `0 0 0 2px black` }
+  '&:hover': { backgroundColor: '$purple700' },
+  '&:not(disabled):focus': { boxShadow: `0 0 0 2px black` },
+
+  '&:disabled': {
+    backgroundColor: '$gray400',
+    cursor: 'not-allowed'
+  }
 })
 
 export default VideoForm

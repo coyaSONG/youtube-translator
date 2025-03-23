@@ -8,6 +8,7 @@ import VideoForm from '../components/video-form'
 import { styled } from '../stitches.config'
 import { extractVideoIdfromUrl, processVideo } from '../utils/api-client'
 import ProgressBar from '../components/progressbar'
+import ServiceStatusIndicator from '../components/service-status'
 
 const Text = styled('p', {
   fontFamily: '$system',
@@ -57,6 +58,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('progress')
   const [resultTranscript, setResultTransciprt] = useState('')
   const [progress, setProgress] = useState(0)
+  const [transcriptionServiceAvailable, setTranscriptionServiceAvailable] = useState<boolean | null>(null)
 
   const handleStartProcessing = async (videoUrl: string) => {
     setResultTransciprt('');
@@ -82,6 +84,10 @@ export default function Home() {
     }
   }
 
+  const handleServiceStatusChange = (status: 'loading' | 'available' | 'unavailable') => {
+    setTranscriptionServiceAvailable(status === 'available')
+  }
+
   return (
     <Box css={{ paddingY: '$6' }}>
       <Head>
@@ -89,7 +95,12 @@ export default function Home() {
       </Head>
       <Container size={{ '@initial': '1', '@bp1': '2' }}>
         <Text as="h1">Youtube Transcription &amp; Translation</Text>
-        <VideoForm onSubmit={handleStartProcessing} isProcessing={isProcessing} />
+        <ServiceStatusIndicator onStatusChange={handleServiceStatusChange} />
+        <VideoForm 
+          onSubmit={handleStartProcessing} 
+          isProcessing={isProcessing}
+          disabled={transcriptionServiceAvailable === false} 
+        />
         <Box css={{height: '24px'}}>
         {isProcessing && <ProgressBar progress={progress}/>}
         </Box>
