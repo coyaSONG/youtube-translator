@@ -71,6 +71,7 @@ async function checkModelAvailability(): Promise<{ available: boolean; modelPath
     const checkScript = `
 import os
 import sys
+import json
 from huggingface_hub import scan_cache_dir
 
 model_id = "mobiuslabsgmbh/faster-whisper-large-v3-turbo"
@@ -84,18 +85,18 @@ try:
         if model_id.lower() in repo.repo_id.lower():
             if repo.repo_type == "model":
                 found = True
-                model_path = repo.repo_path
+                model_path = str(repo.repo_path)  # PosixPath를 문자열로 변환
                 break
     
-    # 결과 출력
+    # 결과 출력 - 정말 단순한 JSON만 출력
     result = {
         "available": found,
-        "modelPath": model_path,
-        "cacheInfo": str(cache_info.repos)[:200] if hasattr(cache_info, "repos") else "No repos found"
+        "modelPath": model_path
     }
-    print(f"{result}")
+    print(json.dumps(result))  # JSON으로 직렬화하여 출력
 except Exception as e:
-    print(f"{{\\\"available\\\": false, \\\"error\\\": \\\"{str(e)}\\\"}}")
+    error_result = {"available": False, "error": str(e)}
+    print(json.dumps(error_result))  # JSON으로 직렬화하여 출력
     `
     
     // 임시 파이썬 스크립트 파일 생성

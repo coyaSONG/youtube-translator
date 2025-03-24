@@ -4,9 +4,44 @@ export function extractVideoIdfromUrl(url: string) {
 
 type ProgressCallback = (output: string, progress: number) => void
 
+export interface Model {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+// 사용 가능한 모델 목록 가져오기
+export async function getAvailableModels(): Promise<Model[]> {
+  try {
+    const response = await fetch('/api/models');
+    const data = await response.json();
+    
+    if (data.models && data.models.length > 0) {
+      return data.models;
+    } else {
+      return getDefaultModels();
+    }
+  } catch (error) {
+    console.error('모델 목록을 가져오는데 실패했습니다:', error);
+    return getDefaultModels();
+  }
+}
+
+// 기본 모델 목록
+function getDefaultModels(): Model[] {
+  return [
+    { id: 'openai/gpt-4o', name: 'OpenAI - GPT-4o', description: 'OpenAI의 최신 멀티모달 모델' },
+    { id: 'anthropic/claude-3-opus', name: 'Anthropic - Claude 3 Opus', description: 'Anthropic의 정확한 고성능 모델' },
+    { id: 'anthropic/claude-3-sonnet', name: 'Anthropic - Claude 3 Sonnet', description: 'Anthropic의 빠르고 효율적인 모델' },
+    { id: 'google/gemini-1.5-pro', name: 'Google - Gemini 1.5 Pro', description: 'Google의 고성능 모델' },
+    { id: 'google/gemini-1.5-flash', name: 'Google - Gemini 1.5 Flash', description: 'Google의 빠른 응답 모델' }
+  ];
+}
+
 export async function processVideo(
   videoId: string,
-  callback: ProgressCallback
+  callback: ProgressCallback,
+  model: string = 'openai/gpt-4o'
 ): Promise<string | false> {
   callback('Downloading audio...\n',0)
   await downloadAudio(videoId, callback)
@@ -17,7 +52,7 @@ export async function processVideo(
 
   if (srt) {
     callback('\nTranslating text... wait...\n',50)
-    const result = await translate(srt, callback)
+    const result = await translate(srt, callback, model)
     callback('\nDone!\n',100)
     return result
   }
@@ -52,14 +87,18 @@ export async function transcribe(
 
 export async function translate(
   srtData: string,
-  onProgress: ProgressCallback
+  onProgress: ProgressCallback,
+  model: string = 'openai/gpt-4o'
 ): Promise<string | false> {
   const res = await fetch(`api/translate`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'text/plain; charset=utf-8'
+      'Content-Type': 'application/json'
     },
-    body: srtData
+    body: JSON.stringify({
+      srt: srtData,
+      model: model
+    })
   })
   const reader = res.body?.getReader()
 

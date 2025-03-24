@@ -4,8 +4,12 @@ import requests
 import pysrt
 import json
 
-# LM Studio 로컬 서버 설정
-LM_STUDIO_API_URL = "http://localhost:1234/v1/chat/completions"
+# OpenRouter API 설정
+OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+
+# 선택된 번역 모델 (환경 변수에서 가져옴)
+TRANSLATION_MODEL = os.environ.get("TRANSLATION_MODEL", "openai/gpt-4o")
 
 input_file = sys.stdin.read()
 subs = pysrt.from_string(input_file)
@@ -16,13 +20,16 @@ def translate_text(text):
         {"role": "user", "content": f"Translate this text to Korean: {text}"}
     ]
     
-    # LM Studio 로컬 서버로 요청 전송
+    # OpenRouter API로 요청 전송
     try:
         response = requests.post(
-            LM_STUDIO_API_URL,
-            headers={"Content-Type": "application/json"},
+            OPENROUTER_API_URL,
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+            },
             json={
-                "model": "gemma-3-27b-it", # 로컬 LM Studio에서 사용 중인 모델 이름
+                "model": TRANSLATION_MODEL, # 선택된 모델 사용
                 "messages": messages,
                 "temperature": 0.2,  # 낮은 temperature로 일관된 번역 유도
                 "max_tokens": 3000,
@@ -54,12 +61,12 @@ def translate_text(text):
         return text
 
 # 번역 테스트
-print(f"[Info] LM Studio 서버에 연결 테스트 중...", file=sys.stderr, flush=True)
+print(f"[Info] OpenRouter API 연결 테스트 중... (모델: {TRANSLATION_MODEL})", file=sys.stderr, flush=True)
 try:
     test_result = translate_text("Hello, this is a test.")
-    print(f"[Info] 서버 연결 성공! 테스트 번역: '{test_result}'", file=sys.stderr, flush=True)
+    print(f"[Info] API 연결 성공! 테스트 번역: '{test_result}'", file=sys.stderr, flush=True)
 except Exception as e:
-    print(f"[Error] 서버 연결 실패: {str(e)}", file=sys.stderr, flush=True)
+    print(f"[Error] API 연결 실패: {str(e)}", file=sys.stderr, flush=True)
 
 for index, subtitle in enumerate(subs):
     try:

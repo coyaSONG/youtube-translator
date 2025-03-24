@@ -1,24 +1,55 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import * as Form from '@radix-ui/react-form'
 import { styled } from '@stitches/react'
 import Box from './box'
+import { Model, getAvailableModels } from '../utils/api-client'
 
 type Props = {
-  onSubmit: (videoUrl: string) => Promise<void>
+  onSubmit: (videoUrl: string, model: string) => Promise<void>
   isProcessing: boolean
   disabled?: boolean
 }
 
 const VideoForm: React.FC<Props> = ({ onSubmit, isProcessing, disabled }) => {
   const [url, setUrl] = useState('')
+  const [selectedModel, setSelectedModel] = useState('openai/gpt-4o')
+  const [models, setModels] = useState<Model[]>([])
+  const [isLoadingModels, setIsLoadingModels] = useState(false)
+
+  // 컴포넌트 마운트 시 모델 목록 가져오기
+  useEffect(() => {
+    const fetchModels = async () => {
+      setIsLoadingModels(true)
+      try {
+        const availableModels = await getAvailableModels()
+        setModels(availableModels)
+        if (availableModels.length > 0) {
+          setSelectedModel(availableModels[0].id)
+        }
+      } catch (error) {
+        console.error('모델 목록을 가져오는데 실패했습니다:', error)
+      } finally {
+        setIsLoadingModels(false)
+      }
+    }
+
+    fetchModels()
+  }, [])
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     if (url) {
-      await onSubmit(url)
+      await onSubmit(url, selectedModel)
     }
   }
 
+  // 모델 옵션 변환
+  const modelOptions = models.map(model => ({
+    label: model.name,
+    value: model.id,
+    description: model.description
+  }))
+  
   return (
     <FormRoot onSubmit={handleSubmit}>
       <FormField name="vieoUrl">
@@ -37,6 +68,31 @@ const VideoForm: React.FC<Props> = ({ onSubmit, isProcessing, disabled }) => {
           />
         </Form.Control>
       </FormField>
+
+      <FormField name="modelSelect">
+        <Flex css={{ alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '4px' }}>
+          <Form.Label>번역 모델 선택</Form.Label>
+          <ModelCount>{isLoadingModels ? '로딩 중...' : `${models.length}개 모델 사용 가능`}</ModelCount>
+        </Flex>
+        {isLoadingModels ? (
+          <div className="h-10 w-full bg-gray-100 rounded-md animate-pulse" />
+        ) : (
+          <Form.Control asChild>
+            <Select
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              disabled={isProcessing || disabled}
+            >
+              {modelOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          </Form.Control>
+        )}
+      </FormField>
+
       <Form.Submit asChild>
         <Button type="submit" disabled={isProcessing || !url || disabled}>
           {isProcessing ? 'Processing...' : 'Start Processing'}
@@ -58,6 +114,16 @@ const FormField = styled(Form.Field, {
 
 const Flex = styled('div', {
   display: 'flex'
+})
+
+const ModelCount = styled('span', {
+  fontSize: '12px',
+  color: '#666',
+  fontStyle: 'italic',
+  display: 'inline-block',
+  padding: '2px 6px',
+  backgroundColor: '#f9f5ff',
+  borderRadius: '4px',
 })
 
 const inputStyles = {
@@ -134,4 +200,15 @@ const Button = styled('button', {
   }
 })
 
+const Select = styled('select', {
+  ...inputStyles,
+  appearance: 'none',
+  backgroundImage: 'url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22currentColor%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20class%3D%22lucide%20lucide-chevron-down%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E")',
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'right 8px center',
+  backgroundSize: '16px',
+  paddingRight: '32px'
+})
+
 export default VideoForm
+

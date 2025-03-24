@@ -59,20 +59,21 @@ export default function Home() {
   const [resultTranscript, setResultTransciprt] = useState('')
   const [progress, setProgress] = useState(0)
   const [transcriptionServiceAvailable, setTranscriptionServiceAvailable] = useState<boolean | null>(null)
+  const [selectedModel, setSelectedModel] = useState<string>('openai/gpt-4o')
 
-  const handleStartProcessing = async (videoUrl: string) => {
+  const handleStartProcessing = async (videoUrl: string, model: string) => {
     setResultTransciprt('');
     setProgressOutput('');
     setProcessing(true)
     setProgress(0)
+    setSelectedModel(model)
   
-    //todo
     const videoId = extractVideoIdfromUrl(videoUrl)
     if (typeof videoId === 'string') {
       const transcriptInKorean = await processVideo(videoId, (message, currentProgress) => {
         setProgressOutput((prev) => prev + message)
         setProgress(currentProgress)
-      })
+      }, model)
 
       if (transcriptInKorean) {
         setResultTransciprt(transcriptInKorean)
@@ -102,6 +103,11 @@ export default function Home() {
           isProcessing={isProcessing}
           disabled={transcriptionServiceAvailable === false} 
         />
+        {selectedModel && !isProcessing && (
+          <Text css={{ fontSize: '14px', marginTop: '-8px', marginBottom: '8px', color: '$gray800' }}>
+            선택된 모델: {selectedModel}
+          </Text>
+        )}
         <Box css={{height: '24px'}}>
         {isProcessing && <ProgressBar progress={progress}/>}
         </Box>
