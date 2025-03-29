@@ -90,6 +90,11 @@ export default function Home() {
     setTranscriptionServiceAvailable(status === 'available')
   }
 
+  const handleModelChange = (model: string) => {
+    console.log('부모 컴포넌트에서 모델 변경 감지:', model);
+    setSelectedModel(model);
+  };
+
   return (
     <Box css={{ paddingY: '$6' }}>
       <Head>
@@ -102,6 +107,8 @@ export default function Home() {
           onSubmit={handleStartProcessing} 
           isProcessing={isProcessing}
           disabled={transcriptionServiceAvailable === false} 
+          onModelChange={handleModelChange}
+          selectedModel={selectedModel}
         />
         {selectedModel && !isProcessing && (
           <Text css={{ fontSize: '14px', marginTop: '-8px', marginBottom: '8px', color: '$gray800' }}>

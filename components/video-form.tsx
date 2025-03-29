@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import * as Form from '@radix-ui/react-form'
 import { styled } from '@stitches/react'
 import Box from './box'
@@ -8,13 +8,21 @@ type Props = {
   onSubmit: (videoUrl: string, model: string) => Promise<void>
   isProcessing: boolean
   disabled?: boolean
+  onModelChange?: (model: string) => void
+  selectedModel: string // 부모로부터 전달받은 선택된 모델
 }
 
-const VideoForm: React.FC<Props> = ({ onSubmit, isProcessing, disabled }) => {
+const VideoForm: React.FC<Props> = ({ 
+  onSubmit, 
+  isProcessing, 
+  disabled, 
+  onModelChange,
+  selectedModel // 부모로부터 전달받은 선택된 모델
+}) => {
   const [url, setUrl] = useState('')
-  const [selectedModel, setSelectedModel] = useState('openai/gpt-4o')
   const [models, setModels] = useState<Model[]>([])
   const [isLoadingModels, setIsLoadingModels] = useState(false)
+  const selectRef = useRef<HTMLSelectElement>(null);
 
   // 컴포넌트 마운트 시 모델 목록 가져오기
   useEffect(() => {
@@ -23,8 +31,10 @@ const VideoForm: React.FC<Props> = ({ onSubmit, isProcessing, disabled }) => {
       try {
         const availableModels = await getAvailableModels()
         setModels(availableModels)
-        if (availableModels.length > 0) {
-          setSelectedModel(availableModels[0].id)
+        if (availableModels.length > 0 && !selectedModel) {
+          // 선택된 모델이 없을 때만 초기 모델 설정
+          const initialModel = availableModels[0].id
+          onModelChange?.(initialModel)
         }
       } catch (error) {
         console.error('모델 목록을 가져오는데 실패했습니다:', error)
@@ -34,7 +44,7 @@ const VideoForm: React.FC<Props> = ({ onSubmit, isProcessing, disabled }) => {
     }
 
     fetchModels()
-  }, [])
+  }, [onModelChange, selectedModel])
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -42,6 +52,14 @@ const VideoForm: React.FC<Props> = ({ onSubmit, isProcessing, disabled }) => {
       await onSubmit(url, selectedModel)
     }
   }
+
+  // 모델 선택 핸들러
+  const handleModelChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newValue = event.target.value;
+    console.log('모델 선택 이벤트 발생:', newValue);
+    // 직접 상태를 변경하지 않고 부모에게 변경 사항만 알림
+    onModelChange?.(newValue);
+  };
 
   // 모델 옵션 변환
   const modelOptions = models.map(model => ({
@@ -77,19 +95,18 @@ const VideoForm: React.FC<Props> = ({ onSubmit, isProcessing, disabled }) => {
         {isLoadingModels ? (
           <div className="h-10 w-full bg-gray-100 rounded-md animate-pulse" />
         ) : (
-          <Form.Control asChild>
-            <Select
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
-              disabled={isProcessing || disabled}
-            >
-              {modelOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-          </Form.Control>
+          <Select
+            ref={selectRef}
+            value={selectedModel}
+            onChange={handleModelChange}
+            disabled={isProcessing || disabled}
+          >
+            {modelOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
         )}
       </FormField>
 
