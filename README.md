@@ -39,7 +39,7 @@ yarn dev
 
 ## 환경 설정
 
-1. `.env` 파일을 생성하고 다음 내용을 추가합니다:
+1. `.env.example`을 복사해 `.env` 파일을 생성하고 다음 내용을 추가합니다:
    ```
    # OpenRouter API 키 (https://openrouter.ai에서 발급)
    OPENROUTER_API_KEY=your_openrouter_api_key
